@@ -1,0 +1,237 @@
+{
+  "version": "Notebook/1.0",
+  "items": [
+    {
+      "type": 1,
+      "content": {
+        "json": "# Azure Virtual Desktop Insights\n\nMonitoring dashboard for the AVD environment (host pool, workspace, and session hosts) backed by the shared Log Analytics workspace. Data sources: AVD diagnostic categories (Connections, Errors, Checkpoints, Agent Health, Management Activities, Feed) and Azure Monitor Agent (Windows Event Logs, performance counters) from the session hosts.\n\n> If a tile below returns no data, confirm the host pool/workspace diagnostic settings and the session host Data Collection Rule association are active, and that at least one connection/event has occurred since deployment."
+      },
+      "name": "text - intro"
+    },
+    {
+      "type": 9,
+      "content": {
+        "version": "KqlParameterItem/1.0",
+        "parameters": [
+          {
+            "id": "time-range-param",
+            "version": "KqlParameterItem/1.0",
+            "name": "TimeRange",
+            "type": 4,
+            "isRequired": true,
+            "value": {
+              "durationMs": 86400000
+            },
+            "typeSettings": {
+              "selectableValues": [
+                { "durationMs": 3600000 },
+                { "durationMs": 14400000 },
+                { "durationMs": 43200000 },
+                { "durationMs": 86400000 },
+                { "durationMs": 259200000 },
+                { "durationMs": 604800000 }
+              ]
+            }
+          }
+        ],
+        "style": "pills",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces"
+      },
+      "name": "parameters - time-range"
+    },
+    {
+      "type": 1,
+      "content": {
+        "json": "## Connections"
+      },
+      "name": "text - connections-header"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "WVDConnections\n| where TimeGenerated {TimeRange}\n| summarize Connections = count() by bin(TimeGenerated, 1h), State\n| render timechart",
+        "size": 0,
+        "title": "Connections over time (by state)",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces"
+      },
+      "name": "query - connections-over-time"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "WVDConnections\n| where TimeGenerated {TimeRange}\n| summarize Connections = count() by SessionHostName\n| sort by Connections desc\n| take 25",
+        "size": 0,
+        "title": "Connections by session host",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "barchart"
+      },
+      "name": "query - connections-by-host"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "WVDConnections\n| where TimeGenerated {TimeRange}\n| summarize Sessions = dcount(CorrelationId) by UserName\n| sort by Sessions desc\n| take 25",
+        "size": 0,
+        "title": "Sessions by user",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "table"
+      },
+      "name": "query - sessions-by-user"
+    },
+    {
+      "type": 1,
+      "content": {
+        "json": "## Errors and diagnostics"
+      },
+      "name": "text - errors-header"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "WVDErrors\n| where TimeGenerated {TimeRange}\n| summarize ErrorCount = count() by bin(TimeGenerated, 1h), CodeSymbolic\n| render timechart",
+        "size": 0,
+        "title": "Errors over time",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces"
+      },
+      "name": "query - errors-over-time"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "WVDErrors\n| where TimeGenerated {TimeRange}\n| summarize Count = count() by CodeSymbolic, ServiceError\n| sort by Count desc\n| take 25",
+        "size": 0,
+        "title": "Top error codes",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "table"
+      },
+      "name": "query - top-errors"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "WVDCheckpoints\n| where TimeGenerated {TimeRange}\n| summarize Count = count() by Name\n| sort by Count desc",
+        "size": 0,
+        "title": "Connection checkpoints reached (session lifecycle funnel)",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "barchart"
+      },
+      "name": "query - checkpoints"
+    },
+    {
+      "type": 1,
+      "content": {
+        "json": "## Host pool and workspace management"
+      },
+      "name": "text - management-header"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "WVDAgentHealthStatus\n| where TimeGenerated {TimeRange}\n| summarize arg_max(TimeGenerated, *) by SessionHostName\n| project SessionHostName, TimeGenerated, Status, LastHeartBeat\n| sort by SessionHostName asc",
+        "size": 0,
+        "title": "Session host agent health (latest status)",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "table"
+      },
+      "name": "query - agent-health"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "WVDManagementActivities\n| where TimeGenerated {TimeRange}\n| summarize Count = count() by OperationName, ActivityType\n| sort by Count desc\n| take 25",
+        "size": 0,
+        "title": "Management activities (host pool / workspace changes)",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "table"
+      },
+      "name": "query - management-activities"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "WVDFeeds\n| where TimeGenerated {TimeRange}\n| summarize Count = count() by bin(TimeGenerated, 1h), State\n| render timechart",
+        "size": 0,
+        "title": "Workspace feed subscriptions",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces"
+      },
+      "name": "query - feeds"
+    },
+    {
+      "type": 1,
+      "content": {
+        "json": "## Session host performance and events"
+      },
+      "name": "text - perf-header"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "Perf\n| where TimeGenerated {TimeRange}\n| where CounterName == \"% Processor Time\" and InstanceName == \"_Total\"\n| summarize AvgCPU = avg(CounterValue) by bin(TimeGenerated, 15m), Computer\n| render timechart",
+        "size": 0,
+        "title": "Average CPU utilization by session host",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces"
+      },
+      "name": "query - cpu"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "Perf\n| where TimeGenerated {TimeRange}\n| where CounterName == \"Available MBytes\"\n| summarize AvgAvailableMB = avg(CounterValue) by bin(TimeGenerated, 15m), Computer\n| render timechart",
+        "size": 0,
+        "title": "Available memory (MB) by session host",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces"
+      },
+      "name": "query - memory"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "Perf\n| where TimeGenerated {TimeRange}\n| where CounterName == \"Max Input Delay\"\n| summarize MaxInputDelayMs = avg(CounterValue) by bin(TimeGenerated, 15m), Computer\n| render timechart",
+        "size": 0,
+        "title": "User input delay (RDP responsiveness)",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces"
+      },
+      "name": "query - input-delay"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "Event\n| where TimeGenerated {TimeRange}\n| where EventLevelName in (\"Error\", \"Warning\")\n| summarize Count = count() by Computer, EventLevelName, Source\n| sort by Count desc\n| take 25",
+        "size": 0,
+        "title": "Session host Windows Event Log errors/warnings",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "table"
+      },
+      "name": "query - events"
+    }
+  ],
+  "fallbackResourceIds": [],
+  "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
+}

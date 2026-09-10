@@ -1,0 +1,49 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
+name: bulk-avd-deployment
+metadata:
+  template: bulk-avd-deployment@0.1.0
+infra:
+  provider: bicep
+  path: infra
+  module: main
+
+# Two directory-object concerns that ARM does not manage for us:
+#
+# 1. Entra ID device objects are not ARM resources, so `azd down` leaves them behind. Session
+#    host names are deterministic, so the next `azd up` would hit 0x801c0083 /
+#    error_hostname_duplicate and every host would fail DomainJoinedCheck.
+#    See scripts/cleanup-entra-devices.ps1.
+# 2. Desktop access is managed through a single security group, but the portal's session host
+#    "Assign" picker does not expand groups - members need direct role assignments to appear
+#    as candidates. See scripts/avd-access-group.ps1.
+#
+# pwsh (PowerShell 7) is cross-platform, so these hooks need no posix/windows split.
+hooks:
+  preprovision:
+    # Safety net: remove device objects orphaned or superseded by a previous deployment before
+    # new session hosts try to join. Devices belonging to healthy, current VMs are kept.
+    - shell: pwsh
+      run: ./scripts/cleanup-entra-devices.ps1
+      continueOnError: true
+    # Create sg-avd-<env> if needed and publish its object ID as AVD_USER_GROUP_IDS so the
+    # deployment grants the group both AVD roles.
+    - shell: pwsh
+      run: ./scripts/avd-access-group.ps1 -Action Ensure
+      continueOnError: true
+  postprovision:
+    # Materialise group members as direct role assignments so they show up in the portal's
+    # session host "Assign" picker.
+    - shell: pwsh
+      run: ./scripts/avd-access-group.ps1 -Action Sync
+      continueOnError: true
+  predown:
+    # Runs while the VMs still exist, so their exact names are known. Removes every matching
+    # device object because the session hosts are about to be destroyed.
+    - shell: pwsh
+      run: ./scripts/cleanup-entra-devices.ps1 -All
+      continueOnError: true
+  postdown:
+    # The access group is owned by this environment, so tear it down with everything else.
+    - shell: pwsh
+      run: ./scripts/avd-access-group.ps1 -Action Remove
+      continueOnError: true

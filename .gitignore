@@ -1,0 +1,27 @@
+# Azure Developer CLI (azd) local environment/state — contains subscription IDs,
+# resource group names and other deployment-specific values that should not be
+# committed. azd also drops its own nested .azure/.gitignore, but that file is
+# itself untracked, so this root-level rule is the durable safety net.
+.azure/
+
+# Environment / secret files
+*.env
+*.env.*
+.env
+*.pfx
+*.pem
+*.publishsettings
+
+# Bicep build output
+*.bicep.json
+.bicep/
+
+# PowerShell transcripts/logs
+*.log
+Transcript*.txt
+
+# Editor / OS artifacts
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store

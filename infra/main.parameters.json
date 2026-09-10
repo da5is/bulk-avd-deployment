@@ -1,0 +1,36 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "environmentName": {
+      "value": "${AZURE_ENV_NAME}"
+    },
+    "location": {
+      "value": "${AZURE_LOCATION}"
+    },
+    "hostPoolLocation": {
+      "value": "${AVD_HOSTPOOL_LOCATION=westeurope}"
+    },
+    "adminPassword": {
+      "value": "${AVD_ADMIN_PASSWORD}"
+    },
+    "sessionHostCount": {
+      "value": "${AVD_SESSION_HOST_COUNT}"
+    },
+    "personalDesktopAssignmentType": {
+      "value": "${AVD_ASSIGNMENT_TYPE=Direct}"
+    },
+    "avdUserPrincipalId": {
+      "value": "${AVD_USER_PRINCIPAL_ID}"
+    },
+    "avdUserPrincipalType": {
+      "value": "${AVD_USER_PRINCIPAL_TYPE=Group}"
+    },
+    "avdUserGroupIds": {
+      "value": "${AVD_USER_GROUP_IDS}"
+    },
+    "avdUserIds": {
+      "value": "${AVD_USER_IDS}"
+    }
+  }
+}
