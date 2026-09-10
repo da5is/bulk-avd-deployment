@@ -43,6 +43,11 @@ everything.
   hooks can clean up session host registrations — see [Notes](#notes)
 - An Entra role that can manage groups (**Groups Administrator**) so the hooks can
   create and delete the `sg-avd-<env>` access group
+- An Entra role that can update application configuration (**Application
+  Administrator**, **Cloud Application Administrator** or **Global
+  Administrator**) so the hooks can enable Microsoft Entra ID authentication for
+  RDP — without it the desktop is visible but no one can sign in, see
+  [Notes](#notes)
 
 ## Deploy
 
@@ -218,10 +223,39 @@ device objects behind that will break the Entra join on the next `azd up` — se
   az vm restart -g rg-<env>-avd -n <vm>
   ```
 - Because the session hosts are Entra ID joined, the host pool sets the
-  `targetisaadjoined:i:1` custom RDP property. This is **required** for clients
+  `enablerdsaadauth:i:1` custom RDP property, so clients authenticate with a
+  Microsoft Entra ID token. This gives single sign-on and is what lets clients
   that are not Entra joined to the same tenant — including the **web client**
-  and macOS/iOS/Android — otherwise connections fail with *"the credentials did
-  not work"*. Override the full string with the `customRdpProperty` parameter.
+  and macOS/iOS/Android — connect at all.
+
+  Microsoft only issues that token once the **tenant** opts in, by setting
+  `isRemoteDesktopProtocolEnabled` on the *Windows Cloud Login* service
+  principal. That flag lives on a directory object, so Bicep cannot set it;
+  `scripts/enable-rdp-sso.ps1` does, wired into `azure.yaml` as two hooks:
+
+  | Hook | Invocation | Purpose |
+  | --- | --- | --- |
+  | `postprovision` | `-Action Enable` | Opts the tenant in to Entra ID RDP authentication, then registers the session hosts in a `sg-avd-<env>-hosts` device group so users are not prompted to allow each new connection. |
+  | `postdown` | `-Action Remove` | Deletes that device group. The tenant-wide flag stays on, since other host pools may rely on it. |
+
+  > ⚠️ **If the desktop appears but sign-in fails with *"the credentials did not
+  > work"*, this opt-in is usually missing.** Check it with:
+  >
+  > ```pwsh
+  > $sp = az ad sp show --id 270efc09-cd0d-444b-a71f-39af4910ec45 --query id -o tsv
+  > az rest --method get --url "https://graph.microsoft.com/beta/servicePrincipals/$sp/remoteDesktopSecurityConfiguration"
+  > ```
+  >
+  > If `isRemoteDesktopProtocolEnabled` is `false`, run
+  > `./scripts/enable-rdp-sso.ps1`. Setting it requires an Entra role such as
+  > **Application Administrator**, **Cloud Application Administrator** or
+  > **Global Administrator**.
+
+  `enablerdsaadauth` replaces the older `targetisaadjoined:i:1`, and the two are
+  mutually exclusive — never set both. The old property restricted sign-in to a
+  username and password prompt, which fails outright for any account subject to
+  multifactor authentication or Conditional Access. Override the full string
+  with the `customRdpProperty` parameter.
 - The host pool uses **Direct** personal desktop assignment so an admin can pin
   a specific user to a specific session host. Azure disables the portal's
   "Assign" button when a personal host pool uses `Automatic`, which instead

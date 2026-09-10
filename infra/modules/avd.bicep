@@ -33,11 +33,20 @@ param avdUserGroupIds string = ''
 @description('Comma-separated Entra ID *user* object IDs granted desktop access. Required for a user to appear in the portal\'s session host "Assign" picker.')
 param avdUserIds string = ''
 
-// targetisaadjoined:i:1 is required for clients that are not Entra ID joined to the same
-// tenant (web client, macOS/iOS/Android, personal Windows devices) to connect to
-// Entra ID-joined session hosts. Without it those connections fail with "credentials did not work".
+// enablerdsaadauth:i:1 makes clients authenticate to the Entra ID-joined session hosts with a
+// Microsoft Entra ID token, which is what lets the web client and other devices that are not
+// joined to this tenant sign in. It also gives single sign-on and, unlike its predecessor,
+// works with multifactor authentication and Conditional Access.
+//
+// It replaces targetisaadjoined:i:1, which is mutually exclusive with it and must not be set
+// alongside it. That property restricted sign-in to a username and password prompt, so any
+// account subject to MFA or Conditional Access failed with "the credentials did not work".
+//
+// The token is only issued once the tenant opts in by setting isRemoteDesktopProtocolEnabled on
+// the Windows Cloud Login service principal, which is a directory object ARM cannot reach - see
+// scripts/enable-rdp-sso.ps1, wired into the postprovision hook.
 @description('Custom RDP properties applied to the host pool.')
-param customRdpProperty string = 'targetisaadjoined:i:1;drivestoredirect:s:;usbdevicestoredirect:s:;redirectclipboard:i:0;redirectprinters:i:0;audiomode:i:0;videoplaybackmode:i:1;devicestoredirect:s:*;redirectcomports:i:1;redirectsmartcards:i:1;enablecredsspsupport:i:1;redirectwebauthn:i:1;use multimon:i:1;'
+param customRdpProperty string = 'enablerdsaadauth:i:1;drivestoredirect:s:;usbdevicestoredirect:s:;redirectclipboard:i:0;redirectprinters:i:0;audiomode:i:0;videoplaybackmode:i:1;devicestoredirect:s:*;redirectcomports:i:1;redirectsmartcards:i:1;enablecredsspsupport:i:1;redirectwebauthn:i:1;use multimon:i:1;'
 
 var desktopVirtualizationUserRoleId = '1d18fff3-a72a-46b5-b4a9-0b38a3cd7e63'
 var virtualMachineUserLoginRoleId = 'fb879df8-f326-4884-b1cf-06f3ad86be52'

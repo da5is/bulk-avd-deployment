@@ -7,7 +7,7 @@ infra:
   path: infra
   module: main
 
-# Two directory-object concerns that ARM does not manage for us:
+# Three directory-object concerns that ARM does not manage for us:
 #
 # 1. Entra ID device objects are not ARM resources, so `azd down` leaves them behind. Session
 #    host names are deterministic, so the next `azd up` would hit 0x801c0083 /
@@ -16,6 +16,9 @@ infra:
 # 2. Desktop access is managed through a single security group, but the portal's session host
 #    "Assign" picker does not expand groups - members need direct role assignments to appear
 #    as candidates. See scripts/avd-access-group.ps1.
+# 3. The host pool requests Entra ID authentication for RDP, but the tenant has to opt in on the
+#    Windows Cloud Login service principal before those tokens are issued. Until it does, the
+#    desktop is visible yet every connection fails. See scripts/enable-rdp-sso.ps1.
 #
 # pwsh (PowerShell 7) is cross-platform, so these hooks need no posix/windows split.
 hooks:
@@ -36,6 +39,11 @@ hooks:
     - shell: pwsh
       run: ./scripts/avd-access-group.ps1 -Action Sync
       continueOnError: true
+    # Opt the tenant in to issuing Entra ID RDP tokens and mark the session hosts as trusted.
+    # Runs after provisioning because it needs the device objects and AVD_VM_NAME_PREFIX.
+    - shell: pwsh
+      run: ./scripts/enable-rdp-sso.ps1 -Action Enable
+      continueOnError: true
   predown:
     # Runs while the VMs still exist, so their exact names are known. Removes every matching
     # device object because the session hosts are about to be destroyed.
@@ -46,4 +54,9 @@ hooks:
     # The access group is owned by this environment, so tear it down with everything else.
     - shell: pwsh
       run: ./scripts/avd-access-group.ps1 -Action Remove
+      continueOnError: true
+    # Same for the trusted device group. The tenant-wide RDP authentication flag stays on,
+    # because other host pools in the tenant may rely on it.
+    - shell: pwsh
+      run: ./scripts/enable-rdp-sso.ps1 -Action Remove
       continueOnError: true

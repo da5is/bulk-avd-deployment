@@ -39,6 +39,7 @@ Everything in this step is automatic:
 | `preprovision` | Creates the `sg-avd-<env>` security group and publishes its object ID as `AVD_USER_GROUP_IDS`. |
 | Bicep | Resource groups, virtual network, Log Analytics, host pool, application group, workspace, session host VMs (Entra join → AVD agent → monitoring agent), and **grants the group both AVD roles**. |
 | `postprovision` | Syncs group members into direct role assignments. A no-op on the first run, because the group is still empty. |
+| `postprovision` | Opts the tenant in to Microsoft Entra ID authentication for RDP, without which every connection fails with *"the credentials did not work"*. |
 
 ---
 
