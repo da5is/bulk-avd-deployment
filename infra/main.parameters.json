@@ -20,10 +20,10 @@
     "vnetAddressPrefix": {
       "value": "${AVD_VNET_ADDRESS_PREFIX}"
     },
-    "avdSubnetPrefix": {
+    "vnetAvdSubnetPrefix": {
       "value": "${AVD_SESSION_HOST_SUBNET_PREFIX}"
     },
-    "bastionSubnetPrefix": {
+    "vnetBastionSubnetPrefix": {
       "value": "${AVD_BASTION_SUBNET_PREFIX}"
     },
     "personalDesktopAssignmentType": {

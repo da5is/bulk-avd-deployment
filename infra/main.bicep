@@ -50,14 +50,17 @@ param adminPassword string
 @description('Number of AVD session host VMs to deploy (1-500).')
 param sessionHostCount int
 
+// Param names are prefixed with "vnet" so azd's alphabetical prompt ordering (it sorts
+// Bicep parameter names before prompting for missing values) asks for the VNet address
+// space before the subnets that must fall within it.
 @description('VNet address space in CIDR notation, e.g. 172.16.0.0/16 (RFC1918-compliant). Set via: azd env set AVD_VNET_ADDRESS_PREFIX <cidr>')
 param vnetAddressPrefix string
 
 @description('snet-avd subnet CIDR, must fall within vnetAddressPrefix and be large enough for sessionHostCount (e.g. 172.16.0.0/23 for up to 500 hosts). Set via: azd env set AVD_SESSION_HOST_SUBNET_PREFIX <cidr>')
-param avdSubnetPrefix string
+param vnetAvdSubnetPrefix string
 
 @description('AzureBastionSubnet CIDR (min /26), must fall within vnetAddressPrefix, e.g. 172.16.2.0/26. Set via: azd env set AVD_BASTION_SUBNET_PREFIX <cidr>')
-param bastionSubnetPrefix string
+param vnetBastionSubnetPrefix string
 
 @description('Time (UTC) the host pool registration token is generated. Do not set manually.')
 param tokenTimestamp string = utcNow('u')
@@ -170,8 +173,8 @@ module network 'modules/network.bicep' = {
     vnetName: vnetName
     logAnalyticsWorkspaceId: logAnalytics.outputs.workspaceId
     vnetAddressPrefix: vnetAddressPrefix
-    avdSubnetPrefix: avdSubnetPrefix
-    bastionSubnetPrefix: bastionSubnetPrefix
+    avdSubnetPrefix: vnetAvdSubnetPrefix
+    bastionSubnetPrefix: vnetBastionSubnetPrefix
   }
 }
 
