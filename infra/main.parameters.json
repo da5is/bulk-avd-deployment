@@ -17,6 +17,15 @@
     "sessionHostCount": {
       "value": "${AVD_SESSION_HOST_COUNT}"
     },
+    "vnetAddressPrefix": {
+      "value": "${AVD_VNET_ADDRESS_PREFIX}"
+    },
+    "avdSubnetPrefix": {
+      "value": "${AVD_SESSION_HOST_SUBNET_PREFIX}"
+    },
+    "bastionSubnetPrefix": {
+      "value": "${AVD_BASTION_SUBNET_PREFIX}"
+    },
     "personalDesktopAssignmentType": {
       "value": "${AVD_ASSIGNMENT_TYPE=Direct}"
     },

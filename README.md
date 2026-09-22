@@ -15,10 +15,13 @@ user in six steps.
    connections, errors/checkpoints, agent health, management activities, and
    session host CPU/memory/input-delay/event log data.
 2. **`rg-<env>-avd`**
-   - VNet `172.16.0.0/16` (RFC1918-compliant private space)
-     - `snet-avd` (`172.16.0.0/23`, 507 usable IPs — sized for 500 AVD hosts) with a
-       NAT Gateway attached for outbound internet access
-     - `AzureBastionSubnet` (`172.16.2.0/26`)
+   - VNet with a user-supplied address space (no default — `azd up` prompts for it;
+     suggested `172.16.0.0/16`, an RFC1918-compliant private space)
+     - `snet-avd` (user-supplied CIDR within the VNet, e.g. `172.16.0.0/23` for 507
+       usable IPs — sized for 500 AVD hosts) with a NAT Gateway attached for
+       outbound internet access
+     - `AzureBastionSubnet` (user-supplied CIDR within the VNet, min `/26`, e.g.
+       `172.16.2.0/26`)
    - Standard Azure Bastion host for remote administration (no public RDP/SSH)
    - AVD Host Pool (**Personal**, Direct assignment — dedicated, persistent
      desktops), Desktop Application Group, and Workspace
@@ -67,6 +70,19 @@ range declared in `main.bicep`). To skip the prompt, set it ahead of time:
 
 ```pwsh
 azd env set AVD_SESSION_HOST_COUNT 25
+```
+
+**VNet / subnet address ranges:** these also have no default, so `azd up` will
+prompt for each one (CIDR notation, e.g. `172.16.0.0/16`). The `snet-avd` and
+`AzureBastionSubnet` prefixes must fall within the VNet prefix, must not
+overlap each other, `snet-avd` must be large enough for `AVD_SESSION_HOST_COUNT`
+hosts, and `AzureBastionSubnet` must be at least a `/26`. To skip the prompts,
+set them ahead of time:
+
+```pwsh
+azd env set AVD_VNET_ADDRESS_PREFIX 172.16.0.0/16
+azd env set AVD_SESSION_HOST_SUBNET_PREFIX 172.16.0.0/23
+azd env set AVD_BASTION_SUBNET_PREFIX 172.16.2.0/26
 ```
 
 ## After deploying

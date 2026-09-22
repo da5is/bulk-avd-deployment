@@ -18,6 +18,9 @@ azd env new <env-name>                      # or: azd env select <existing>
 
 azd env set AVD_ADMIN_PASSWORD '<12+ chars>'
 azd env set AVD_SESSION_HOST_COUNT 5        # 1-500; you are prompted if unset
+azd env set AVD_VNET_ADDRESS_PREFIX 172.16.0.0/16          # you are prompted if unset
+azd env set AVD_SESSION_HOST_SUBNET_PREFIX 172.16.0.0/23   # you are prompted if unset
+azd env set AVD_BASTION_SUBNET_PREFIX 172.16.2.0/26        # you are prompted if unset
 ```
 
 `AVD_ADMIN_PASSWORD` becomes the local administrator password on every session

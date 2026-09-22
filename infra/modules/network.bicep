@@ -4,12 +4,14 @@ param tags object
 param vnetName string
 param logAnalyticsWorkspaceId string
 
-// RFC1918-compliant private address space (172.16.0.0/12 range -> using a /16 block)
-var vnetAddressPrefix = '172.16.0.0/16'
-// /23 provides 507 usable addresses - large enough to hold 500 AVD session hosts
-var avdSubnetPrefix = '172.16.0.0/23'
-// Azure Bastion requires a dedicated subnet named exactly "AzureBastionSubnet", min /26
-var bastionSubnetPrefix = '172.16.2.0/26'
+@description('VNet address space in CIDR notation (e.g. 172.16.0.0/16). Set via: azd env set AVD_VNET_ADDRESS_PREFIX <cidr>')
+param vnetAddressPrefix string
+
+@description('snet-avd subnet CIDR, must fall within vnetAddressPrefix and be large enough for the session host count. Set via: azd env set AVD_SESSION_HOST_SUBNET_PREFIX <cidr>')
+param avdSubnetPrefix string
+
+@description('AzureBastionSubnet CIDR (min /26), must fall within vnetAddressPrefix. Set via: azd env set AVD_BASTION_SUBNET_PREFIX <cidr>')
+param bastionSubnetPrefix string
 
 resource natPip 'Microsoft.Network/publicIPAddresses@2023-05-01' = {
   name: '${vnetName}-natgw-pip'
